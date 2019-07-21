@@ -1,10 +1,9 @@
 #!/usr/bin/python
-from datetime import date
 
 def fio_configurations(devices, core_count, engine):
-    filename = "disk-test-" + str(date.today())
+    filename = "configs.fio"
     # Global configurations
-    with open('./' + filename + '.fio', 'w+') as configurations:
+    with open('./' + filename, 'w+') as configurations:
         configurations.write('[global]\n')
         # In case we want to use a different engine.
         configurations.write('ioengine=' + engine + '\n')

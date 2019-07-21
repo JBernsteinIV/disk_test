@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from datetime import date
 from fio_configurations import fio_configurations
 import os
 import re
@@ -115,6 +116,6 @@ if __name__ == '__main__':
         print "******************************"
     print "Found " + core_count() + " available cores"
     config_file = fio_configurations(devices, core_count(), 'libaio')
-    output_format = ' --output-format=json --output=fio-results.json'
+    output_format = ' --output-format=json --output=' + 'disk-test-results-' + str(date.today()) + '.json'
     # Run the benchmark
-    subprocess.call('sudo fio ' + config_file + '.fio' + output_format, shell=True)
+    subprocess.call('sudo fio configs.fio' + output_format, shell=True)
