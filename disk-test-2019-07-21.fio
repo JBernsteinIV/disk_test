@@ -1,0 +1,16 @@
+[global]
+ioengine=libaio
+direct=1
+rw=read
+[job /dev/sdb ]
+filename=/dev/sdb
+bs=4096
+iodepth=32
+numjobs=4
+size=2g
+[job /dev/sda ]
+filename=/dev/sda
+bs=4096
+iodepth=32
+numjobs=4
+size=2g
