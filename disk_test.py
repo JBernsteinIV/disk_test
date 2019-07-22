@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from datetime import date
 from fio_configurations import fio_configurations
+from health_monitor import health_monitor
 import os
 import re
 import subprocess
@@ -28,15 +29,16 @@ def not_filtered(device):
 # Builds a Dictionary object for each device to pass into fio_configurations.
 def device_attributes(device):
     attributes = {
-        'name'       : '/dev/' + device,
-        'model'      : model(device),
-        'size'       : capacity(device),
-        'serial'     : serial_number(device),
-        'firmware'   : firmware(device),
-        'type'       : device_type(device),
-        'interface'  : device_interface(device),
-        'queue_depth': queue_depth(device),
-        'block_size' : block_size(device)
+        'name'          : '/dev/' + device,
+        'model'         : model(device),
+        'size'          : capacity(device),
+        'serial'        : serial_number(device),
+        'firmware'      : firmware(device),
+        'type'          : device_type(device),
+        'interface'     : device_interface(device),
+        'queue_depth'   : queue_depth(device),
+        'block_size'    : block_size(device),
+        'is_raid_device': is_raid_device(device)
     }
     return attributes
 # Captures the human-readable model name of the drive.
@@ -64,6 +66,7 @@ def serial_number(device):
     regex = re.findall(r'\S+', wwid)
     serial = regex[-1]
     return serial
+
 # Captures the last four digits of the device's firmware revision.
 def firmware(device):
     return str(parser("cat", "/sys/block/", device, "/device/rev"))
@@ -92,30 +95,45 @@ def core_count():
     parsed = os.popen('lscpu -e | wc -l').readlines()
     return str(int(next(iter(parsed),None).split('\n')[0]) -1)
 
+# Check for the presence of a RAID controller.
+# If one is found, check if the device is connected to a RAID controller.
+# TODO: When RAID device is found, return the model name.
+# TODO: Separate out this from device Dictionary; make separate function.
+# If RAID controller is found, use storcli/perccli utility to find device information.
+def is_raid_device(device):
+    output = os.popen('lspci|grep -i "RAID"').readlines()
+    if not output:
+        return "No"
+    return str(next(iter(output),None))
+
+def menu(device):
+    print "******************************"
+    print "Detected " + device['name']
+    print "Available Space: " + device['size']
+    print "Model name: " + device['model']
+    print "Serial Number: " + device['serial']
+    print "Firmware Revision: " + device['firmware']
+    print "Device type is: " + device['type']
+    print "I/O depth of: " + device['queue_depth']
+    print "Block size: " + device['block_size'] + " bytes"
+    print "Transport model: " + device['interface']
+    print "Connected to RAID?: " + device['is_raid_device']
+    print "******************************"
+
 # MAIN FUNCTION
 if __name__ == '__main__':
-    #print "Found " + system['CPU'] + " available cores"
     # Scan for storage devices.
     block_devices = walk('/sys/block/')
     # Pass the results into a list for the test.
     devices = []
     for device in block_devices:
         devices.append(device_attributes(device))
-    # Begin the test.
+    # Display device information to the user for each device found.
     for device in devices:
-        print "******************************"
-        print "Detected " + device['name']
-        print device['size'] + " available space"
-        print "Model name: " + device['model']
-        print "Serial Number: " + device['serial']
-        print "Firmware Revision: " + device['firmware']
-        print "Device type is: " + device['type']
-        print "I/O depth of: " + device['queue_depth']
-        print "Block size: " + device['block_size'] + " bytes"
-        print "Transport model: " + device['interface']
-        print "******************************"
-    print "Found " + core_count() + " available cores"
-    config_file = fio_configurations(devices, core_count(), 'libaio')
-    output_format = ' --output-format=json --output=' + 'disk-test-results-' + str(date.today()) + '.json'
+        #menu(device)
+        health_monitor(device)
+    # Build the configuration file for the test. Output to a file with today's timestamp.
+    #config_file = fio_configurations(devices, core_count(), 'libaio')
+    #output_format = ' --output-format=json --output=' + 'disk-test-results-' + str(date.today()) + '.json'
     # Run the benchmark
-    subprocess.call('sudo fio configs.fio' + output_format, shell=True)
+    #subprocess.call('sudo fio configs.fio' + output_format, shell=True)
