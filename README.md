@@ -20,7 +20,7 @@ The main important element of the utility is the device_attributes() Dictionary 
     }
     return attributes
 # Queue Depth or "I/O Depth"
-Queue depth refers to the amount of I/O requests that can be submitted to a device and fulfilled by a device within a second. Traditional SATA drives typically support a maximum of 32 which means that in peak performance, the drive can fulfill 32 I/O operations per second (32 IOPS). Serial Attached SCSI or 'SAS' typically can handle 128 IOPS at peak performance. And theoretically at peak performance, an NVMe drive can handle 65,536 I/O operations per second (in reality they are typically hovering at 128 I/O operations per second).
+Queue depth refers to the amount of I/O requests that can be submitted to a device and fulfilled by a device within a second. Traditional SATA drives typically support a maximum of 32 which means that in peak performance, the drive can fulfill 32 I/O operations per second (32 IOPS). Serial Attached SCSI or 'SAS' typically can handle 128 IOPS at peak performance. Theoretically at peak performance, an NVMe drive can handle 65,536 I/O operations per second (in reality they are typically hovering at 128 I/O operations per second).
 # SAS vs. SATA - How to distinguish the two?
 If you run 'lsblk' on a system with SAS drives versus SATA drives, the two would look identical.
 In /sys/block/<sda/sdb/etc>/device/ lies a file called 'wwid' or World-Wide ID. SAS drives typically come equipped with a 'SAS Address' which is global and maintained by the Network Address Authority or 'naa'.
