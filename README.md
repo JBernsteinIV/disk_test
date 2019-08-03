@@ -7,16 +7,16 @@ The main important element of the utility is the device_attributes() Dictionary 
 
 	def device_attributes(device):
 	    attributes = {
-        'name'          : '/dev/' + device, //e.g. /dev/sda, /dev/sdb, etc.
-        'model'         : model(device),  // What is the model name of the hard drive?
-        'size'          : capacity(device),// How much storage is available?
-        'serial'        : serial_number(device), //Self-explanatory.
-        'firmware'      : firmware(device), //What is the firmware revision of the device?
-        'type'          : device_type(device), //Is it an HDD, SSD, or NVMe? (PCI-e SSD)
+        'name'          : '/dev/' + device,         //e.g. /dev/sda, /dev/sdb, etc.
+        'model'         : model(device),            // What is the model name of the hard drive?
+        'size'          : capacity(device),         // How much storage is available?
+        'serial'        : serial_number(device),    //Self-explanatory.
+        'firmware'      : firmware(device),         //What is the firmware revision of the device?
+        'type'          : device_type(device),      //Is it an HDD, SSD, or NVMe? (PCI-e SSD)
         'interface'     : device_interface(device), //Is it SATA, PCI-e, SAS, etc?
-        'queue_depth'   : queue_depth(device), //How many I/O operations can occur in x seconds?
-        'block_size'    : block_size(device), //Typically returns the value 4096 (page size).
-        'is_raid_device': is_raid_device(device) //Is the drive connected to a RAID controller?
+        'queue_depth'   : queue_depth(device),      //How many I/O operations can occur in x seconds?
+        'block_size'    : block_size(device),       //Typically returns the value 4096 (page size).
+        'is_raid_device': is_raid_device(device)    //Is the drive connected to a RAID controller?
     }
     return attributes
 # Queue Depth or "I/O Depth"
