@@ -131,7 +131,8 @@ if __name__ == '__main__':
     # Display device information to the user for each device found.
     for device in devices:
         #menu(device)
-        health_monitor(device)
+        # Health monitor is currently broken. Don't use.
+        #health_monitor(device)
     # Build the configuration file for the test. Output to a file with today's timestamp.
     #config_file = fio_configurations(devices, core_count(), 'libaio')
     #output_format = ' --output-format=json --output=' + 'disk-test-results-' + str(date.today()) + '.json'
