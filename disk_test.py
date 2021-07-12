@@ -1,10 +1,10 @@
 #!/usr/bin/python
 from datetime import date
 from fio_configurations import fio_configurations
-from health_monitor import health_monitor
 import os
 import re
 import subprocess
+import time
 # Helper function for scanning /sys/block/ for devices.
 def walk(path):
     for (path, block_devices, irrelevant) in os.walk(path,topdown=True):
@@ -48,7 +48,7 @@ def model(device):
 def capacity(device):
     amount_in_bytes = int(parser("cat", "/sys/block/", device, "/size")) * 512
     amount_in_gigabytes = amount_in_bytes / (1024 * 1024 * 1024)
-    return str(amount_in_gigabytes) + " GB"
+    return str(amount_in_gigabytes)
 # WWID includes: device type (e.g. t10.ATA), Model name, Serial Number.
 def device_interface(device):
     wwid = "".join(parser("cat", "/sys/block/", device, "/device/wwid"))
@@ -109,31 +109,65 @@ def is_raid_device(device):
 def menu(device):
     print "******************************"
     print "Detected " + device['name']
-    print "Available Space: " + device['size']
+    print "Available Space: " + device['size'] + ' GB'
     print "Model name: " + device['model']
     print "Serial Number: " + device['serial']
     print "Firmware Revision: " + device['firmware']
-    print "Device type is: " + device['type']
-    print "I/O depth of: " + device['queue_depth']
-    print "Block size: " + device['block_size'] + " bytes"
-    print "Transport model: " + device['interface']
-    print "Connected to RAID?: " + device['is_raid_device']
+    #print "Device type is: " + device['type']
+    #print "I/O depth of: " + device['queue_depth']
+    #print "Block size: " + device['block_size'] + " bytes"
+    #print "Transport model: " + device['interface']
+    #print "Connected to RAID?: " + device['is_raid_device']
     print "******************************"
+
+def get_system_serial():
+    serial = subprocess.check_output("cat /sys/class/dmi/id/product_serial", shell=True)
+    return serial.decode('utf-8')
 
 # MAIN FUNCTION
 if __name__ == '__main__':
+    # Storage server IP
+    server = "10.0.8.40:/tmp"
+
     # Scan for storage devices.
     block_devices = walk('/sys/block/')
     # Pass the results into a list for the test.
     devices = []
+    devices_to_test = []
+    # This is for SSDs since we won't be stress testing them with fio.
+    devices_to_skip = []
     for device in block_devices:
         devices.append(device_attributes(device))
     # Display device information to the user for each device found.
     for device in devices:
-        #menu(device)
-        health_monitor(device)
+        menu(device)
+        if device['type'] == 'HDD':
+		devices_to_test.append(device)
+        else:
+        	devices_to_skip.append(device)
+    print "Detected " + str(len(devices)) + " amount of drives."
+    print "Performing fio test on " + str(len(devices_to_test)) + " drives."
+    print "Skipping fio test for " + str(len(devices_to_skip)) + " drives."
     # Build the configuration file for the test. Output to a file with today's timestamp.
-    #config_file = fio_configurations(devices, core_count(), 'libaio')
-    #output_format = ' --output-format=json --output=' + 'disk-test-results-' + str(date.today()) + '.json'
+    config_file = fio_configurations(devices_to_test, core_count(), 'libaio')
+    serial = get_system_serial()
+    output_file = str(serial).strip() + "_fio_results_" + str(date.today()) + '.json'
+    output_format = ' --output-format=json --output=' + output_file
+    additional_flags = ' --norandommap --refill_buffers --timeout=14400'
     # Run the benchmark
-    #subprocess.call('sudo fio configs.fio' + output_format, shell=True)
+    subprocess.call('sudo fio configs.fio ' + output_format + additional_flags, shell=True)
+    # Use smartctl for SSDs instead.
+    smartctl_output_file = str(serial).strip() + "_smartctl_results_" + str(date.today()) + '.txt'
+    for device in devices_to_skip:
+	print device['name']
+	command = 'sudo smartctl -t short %s' % device['name']
+	subprocess.check_output(command, shell=True)
+	print "Waiting 120 seconds for smartctl short tests to complete"
+	print "Saving smartctl attributes output to %s" % smartctl_output_file
+    for device in devices_to_skip:
+	subprocess.check_output("smartctl -a %s | tee %s" % (device['name'], smartctl_output_file), shell=True)
+        time.sleep(120)
+        print "Storage tests completed"
+    print "Uploading %s to storage server" % server
+    uploading = subprocess.check_output("sshpass scp -o StrictHostKeyChecking=no %s root@%s" % (output_file, server), shell=True)
+    uploading.decode('utf-8')

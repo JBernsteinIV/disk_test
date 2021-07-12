@@ -9,7 +9,7 @@ def fio_configurations(devices, core_count, engine):
         configurations.write('ioengine=' + engine + '\n')
         # Enable O_DIRECT to bypass page cache.
         configurations.write('direct=1\n')
-        configurations.write('rw=read\n')
+        configurations.write('rw=readwrite\n')
         # Determines number of cores to allocate per device.
         processes_per_job = int(core_count) // len(devices)
         # Builds configurations for each device.
@@ -19,5 +19,5 @@ def fio_configurations(devices, core_count, engine):
             configurations.write('bs=' + device['block_size'] + '\n')
             configurations.write('iodepth=' + device['queue_depth'] + '\n')
             configurations.write('numjobs=' + str(processes_per_job) + '\n')
-            configurations.write('size=2g\n')
+            configurations.write('size=' + device['size'] + 'G\n')
     return filename
